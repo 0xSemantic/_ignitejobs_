@@ -6,7 +6,6 @@
  * Usage: Settings page for managing job search configurations
  * Edge cases: Form validation, loading states, error handling
  */
-
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Plus, Trash2, Save, Settings, Upload } from 'lucide-react'
@@ -40,7 +39,6 @@ const ConfigForm = () => {
   const handleSave = async (e) => {
     e.preventDefault()
     if (!activeConfig) return
-
     setSaving(true)
     try {
       const formData = new FormData(e.target)
@@ -56,7 +54,6 @@ const ConfigForm = () => {
           salary_min: parseInt(formData.get('salary_min')) || 0,
         }
       }
-
       await updateUserConfig(activeConfig.id, updates)
       await loadConfigs() // Reload to get updated data
     } catch (error) {
@@ -79,7 +76,6 @@ const ConfigForm = () => {
         salary_min: 50000,
       }
     }
-
     try {
       const created = await createUserConfig(newConfig)
       setConfigs(prev => [...prev, created])
@@ -123,7 +119,6 @@ const ConfigForm = () => {
           <span>New Config</span>
         </motion.button>
       </motion.div>
-
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Config List */}
         <motion.div
@@ -138,30 +133,35 @@ const ConfigForm = () => {
               </h3>
             </div>
             <div className="p-2">
-              {configs.map((config) => (
-                <motion.button
-                  key={config.id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setActiveConfig(config)}
-                  className={`w-full text-left p-3 rounded-lg mb-2 transition-all duration-200 ${
-                    activeConfig?.id === config.id
-                      ? 'bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800'
-                      : 'hover:bg-secondary-100 dark:hover:bg-secondary-700'
-                  }`}
-                >
-                  <div className="font-medium text-secondary-900 dark:text-white">
-                    Config #{config.id}
-                  </div>
-                  <div className="text-sm text-secondary-500 dark:text-secondary-400">
-                    {config.prefs.job_types.join(', ')}
-                  </div>
-                </motion.button>
-              ))}
+              {configs.length > 0 ? (
+                configs.map((config) => (
+                  <motion.button
+                    key={config.id}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setActiveConfig(config)}
+                    className={`w-full text-left p-3 rounded-lg mb-2 transition-all duration-200 ${
+                      activeConfig?.id === config.id
+                        ? 'bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800'
+                        : 'hover:bg-secondary-100 dark:hover:bg-secondary-700'
+                    }`}
+                  >
+                    <div className="font-medium text-secondary-900 dark:text-white">
+                      Config #{config.id}
+                    </div>
+                    <div className="text-sm text-secondary-500 dark:text-secondary-400">
+                      {(config.prefs?.job_types || []).join(', ')}
+                    </div>
+                  </motion.button>
+                ))
+              ) : (
+                <p className="text-center text-sm text-secondary-500 dark:text-secondary-400 py-4">
+                  No configurations yet
+                </p>
+              )}
             </div>
           </div>
         </motion.div>
-
         {/* Config Form */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
@@ -186,7 +186,6 @@ const ConfigForm = () => {
                     </div>
                   </div>
                 </div>
-
                 <div className="p-6 space-y-6">
                   {/* Job Types */}
                   <div>
@@ -200,7 +199,7 @@ const ConfigForm = () => {
                             type="checkbox"
                             name="job_types"
                             value={type}
-                            defaultChecked={activeConfig.prefs.job_types.includes(type)}
+                            defaultChecked={activeConfig.prefs?.job_types?.includes(type) || false}
                             className="rounded border-secondary-300 text-primary-500 focus:ring-primary-500"
                           />
                           <span className="text-sm text-secondary-700 dark:text-secondary-300">
@@ -210,7 +209,6 @@ const ConfigForm = () => {
                       ))}
                     </div>
                   </div>
-
                   {/* Sites */}
                   <div>
                     <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-3">
@@ -223,7 +221,7 @@ const ConfigForm = () => {
                             type="checkbox"
                             name="sites"
                             value={site}
-                            defaultChecked={activeConfig.prefs.sites.includes(site)}
+                            defaultChecked={activeConfig.prefs?.sites?.includes(site) || false}
                             className="rounded border-secondary-300 text-primary-500 focus:ring-primary-500"
                           />
                           <span className="text-sm text-secondary-700 dark:text-secondary-300">
@@ -233,7 +231,6 @@ const ConfigForm = () => {
                       ))}
                     </div>
                   </div>
-
                   {/* Qualifications */}
                   <div>
                     <label htmlFor="qualifications" className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
@@ -243,7 +240,7 @@ const ConfigForm = () => {
                       type="text"
                       id="qualifications"
                       name="qualifications"
-                      defaultValue={activeConfig.prefs.qualifications.join(', ')}
+                      defaultValue={(activeConfig.prefs?.qualifications || []).join(', ')}
                       placeholder="JavaScript, React, Python, etc."
                       className="w-full px-4 py-3 border border-secondary-300 dark:border-secondary-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-secondary-700 text-secondary-900 dark:text-white placeholder-secondary-500"
                     />
@@ -251,7 +248,6 @@ const ConfigForm = () => {
                       Separate skills with commas
                     </p>
                   </div>
-
                   {/* Keywords */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -262,7 +258,7 @@ const ConfigForm = () => {
                         type="text"
                         id="keywords"
                         name="keywords"
-                        defaultValue={activeConfig.prefs.keywords.join(', ')}
+                        defaultValue={(activeConfig.prefs?.keywords || []).join(', ')}
                         placeholder="frontend, developer, remote, etc."
                         className="w-full px-4 py-3 border border-secondary-300 dark:border-secondary-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-secondary-700 text-secondary-900 dark:text-white placeholder-secondary-500"
                       />
@@ -275,13 +271,12 @@ const ConfigForm = () => {
                         type="text"
                         id="exclude"
                         name="exclude"
-                        defaultValue={activeConfig.prefs.exclude.join(', ')}
+                        defaultValue={(activeConfig.prefs?.exclude || []).join(', ')}
                         placeholder="senior, lead, manager, etc."
                         className="w-full px-4 py-3 border border-secondary-300 dark:border-secondary-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-secondary-700 text-secondary-900 dark:text-white placeholder-secondary-500"
                       />
                     </div>
                   </div>
-
                   {/* Additional Settings */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
@@ -291,7 +286,7 @@ const ConfigForm = () => {
                       <select
                         id="date_range_days"
                         name="date_range_days"
-                        defaultValue={activeConfig.prefs.date_range_days}
+                        defaultValue={activeConfig.prefs?.date_range_days || 7}
                         className="w-full px-4 py-3 border border-secondary-300 dark:border-secondary-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-secondary-700 text-secondary-900 dark:text-white"
                       >
                         <option value="1">Last 24 hours</option>
@@ -309,7 +304,7 @@ const ConfigForm = () => {
                         type="number"
                         id="salary_min"
                         name="salary_min"
-                        defaultValue={activeConfig.prefs.salary_min}
+                        defaultValue={activeConfig.prefs?.salary_min || ''}
                         placeholder="50000"
                         className="w-full px-4 py-3 border border-secondary-300 dark:border-secondary-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-secondary-700 text-secondary-900 dark:text-white placeholder-secondary-500"
                       />
@@ -320,7 +315,7 @@ const ConfigForm = () => {
                       </label>
                       <select
                         name="remote"
-                        defaultValue={activeConfig.prefs.remote.toString()}
+                        defaultValue={activeConfig.prefs?.remote ? 'true' : 'false'}
                         className="w-full px-4 py-3 border border-secondary-300 dark:border-secondary-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-secondary-700 text-secondary-900 dark:text-white"
                       >
                         <option value="true">Remote Only</option>
@@ -329,7 +324,6 @@ const ConfigForm = () => {
                     </div>
                   </div>
                 </div>
-
                 <div className="p-6 border-t border-secondary-200 dark:border-secondary-700 bg-secondary-50 dark:bg-secondary-700/20 rounded-b-xl">
                   <motion.button
                     type="submit"

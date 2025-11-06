@@ -6,7 +6,6 @@
  * Usage: Slide-in panel for notification management
  * Edge cases: Empty state, loading states, real-time updates
  */
-
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Bell, CheckCircle, AlertCircle, Info, Sparkles } from 'lucide-react'
@@ -37,8 +36,8 @@ const NotificationPanel = ({ isOpen, onClose }) => {
   const handleMarkAsRead = async (id) => {
     try {
       await markNotificationAsRead(id)
-      setNotifications(prev => 
-        prev.map(notif => 
+      setNotifications(prev =>
+        prev.map(notif =>
           notif.id === id ? { ...notif, read: true } : notif
         )
       )
@@ -50,7 +49,7 @@ const NotificationPanel = ({ isOpen, onClose }) => {
   const handleMarkAllAsRead = async () => {
     try {
       await markAllNotificationsAsRead()
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(notif => ({ ...notif, read: true }))
       )
     } catch (error) {
@@ -98,7 +97,6 @@ const NotificationPanel = ({ isOpen, onClose }) => {
             onClick={onClose}
             className="fixed inset-0 bg-black bg-opacity-50 z-50"
           />
-          
           {/* Panel */}
           <motion.div
             initial={{ x: '100%' }}
@@ -137,7 +135,6 @@ const NotificationPanel = ({ isOpen, onClose }) => {
                 </button>
               </div>
             </div>
-
             {/* Notifications List */}
             <div className="flex-1 overflow-auto">
               {loading ? (
@@ -153,8 +150,8 @@ const NotificationPanel = ({ isOpen, onClose }) => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
                       className={`p-4 rounded-xl border transition-all duration-200 ${
-                        notification.read 
-                          ? 'bg-white dark:bg-secondary-700 border-secondary-200 dark:border-secondary-600' 
+                        notification.read
+                          ? 'bg-white dark:bg-secondary-700 border-secondary-200 dark:border-secondary-600'
                           : getNotificationColor(notification.type)
                       }`}
                     >

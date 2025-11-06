@@ -20,32 +20,37 @@ import {
 import { fetchCampaigns } from '../api/campaignService'
 import { fetchGroupedResults } from '../api/resultsService'
 import { fetchNotifications } from '../api/notificationService'
+import { useAuth } from '../utils/AuthContext'
 import LoadingSpinner from './LoadingSpinner'
 
 const DashboardHome = () => {
+  const { user, signout } = useAuth()
   const [stats, setStats] = useState(null)
   const [recentCampaigns, setRecentCampaigns] = useState([])
   const [recentResults, setRecentResults] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     const loadData = async () => {
+      if (!user) return
+      setLoading(true)
+      setError('')
       try {
         const [campaigns, groupedResults, notifications] = await Promise.all([
           fetchCampaigns(),
           fetchGroupedResults(),
-          fetchNotifications()
+          fetchNotifications(true) // Fetch unread notifications
         ])
-
         setRecentCampaigns(campaigns.slice(0, 3))
         
         // Flatten and get recent results
-        const allResults = groupedResults.flatMap(group => group.results)
+        const allResults = groupedResults.flatMap(group => group.results || [])
         setRecentResults(allResults.slice(0, 5))
 
         // Calculate stats
         const totalJobs = allResults.length
-        const highMatches = allResults.filter(job => job.match_score >= 80).length
+        const highMatches = allResults.filter(job => (job.match_score || 0) >= 80).length
         const activeCampaigns = campaigns.filter(c => c.active).length
 
         setStats({
@@ -57,13 +62,18 @@ const DashboardHome = () => {
 
       } catch (error) {
         console.error('Error loading dashboard data:', error)
+        if (error.response?.status === 401) {
+          await signout() // Trigger logout on unauthorized
+        } else {
+          setError('Failed to load dashboard data. Please try again later.')
+        }
       } finally {
         setLoading(false)
       }
     }
 
     loadData()
-  }, [])
+  }, [user, signout])
 
   if (loading) {
     return (
@@ -115,7 +125,7 @@ const DashboardHome = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold mb-2">
-              Welcome back! 👋
+              Welcome back, {user?.name || user?.email}! 👋
             </h1>
             <p className="text-primary-100 opacity-90">
               Your job search is actively running across {stats?.activeCampaigns || 0} campaigns
@@ -180,33 +190,33 @@ const DashboardHome = () => {
           </div>
 
           <div className="space-y-4">
-            {recentCampaigns.map((campaign, index) => (
-              <motion.div
-                key={campaign.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 + index * 0.1 }}
-                className="flex items-center justify-between p-4 rounded-lg bg-secondary-50 dark:bg-secondary-700/50"
-              >
-                <div className="flex-1">
-                  <h3 className="font-medium text-secondary-900 dark:text-white">
-                    {campaign.name}
-                  </h3>
-                  <p className="text-sm text-secondary-500 dark:text-secondary-400">
-                    {campaign.schedule_str} • {campaign.results_count} results
-                  </p>
-                </div>
-                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  campaign.active 
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                    : 'bg-secondary-100 text-secondary-800 dark:bg-secondary-700 dark:text-secondary-400'
-                }`}>
-                  {campaign.active ? 'Active' : 'Paused'}
-                </div>
-              </motion.div>
-            ))}
-
-            {recentCampaigns.length === 0 && (
+            {recentCampaigns.length > 0 ? (
+              recentCampaigns.map((campaign, index) => (
+                <motion.div
+                  key={campaign.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 + index * 0.1 }}
+                  className="flex items-center justify-between p-4 rounded-lg bg-secondary-50 dark:bg-secondary-700/50"
+                >
+                  <div className="flex-1">
+                    <h3 className="font-medium text-secondary-900 dark:text-white">
+                      {campaign.name}
+                    </h3>
+                    <p className="text-sm text-secondary-500 dark:text-secondary-400">
+                      {campaign.schedule_str} • {campaign.results_count || 0} results
+                    </p>
+                  </div>
+                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    campaign.active 
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                      : 'bg-secondary-100 text-secondary-800 dark:bg-secondary-700 dark:text-secondary-400'
+                  }`}>
+                    {campaign.active ? 'Active' : 'Paused'}
+                  </div>
+                </motion.div>
+              ))
+            ) : (
               <div className="text-center py-8 text-secondary-500 dark:text-secondary-400">
                 <Briefcase className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>No active campaigns</p>
@@ -231,29 +241,29 @@ const DashboardHome = () => {
           </div>
 
           <div className="space-y-4">
-            {recentResults.map((job, index) => (
-              <motion.div
-                key={job.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 + index * 0.1 }}
-                className="flex items-center justify-between p-4 rounded-lg bg-secondary-50 dark:bg-secondary-700/50"
-              >
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-secondary-900 dark:text-white truncate">
-                    {job.title}
-                  </h3>
-                  <p className="text-sm text-secondary-500 dark:text-secondary-400 truncate">
-                    {job.company} • {job.location}
-                  </p>
-                </div>
-                <div className={`px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900/20 dark:text-primary-400`}>
-                  {job.match_score}%
-                </div>
-              </motion.div>
-            ))}
-
-            {recentResults.length === 0 && (
+            {recentResults.length > 0 ? (
+              recentResults.map((job, index) => (
+                <motion.div
+                  key={job.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 + index * 0.1 }}
+                  className="flex items-center justify-between p-4 rounded-lg bg-secondary-50 dark:bg-secondary-700/50"
+                >
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-secondary-900 dark:text-white truncate">
+                      {job.title}
+                    </h3>
+                    <p className="text-sm text-secondary-500 dark:text-secondary-400 truncate">
+                      {job.company || 'Unknown Company'} • {job.location || 'Remote'}
+                    </p>
+                  </div>
+                  <div className={`px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900/20 dark:text-primary-400`}>
+                    {(job.match_score || 0).toFixed(0)}%
+                  </div>
+                </motion.div>
+              ))
+            ) : (
               <div className="text-center py-8 text-secondary-500 dark:text-secondary-400">
                 <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>No recent matches</p>
@@ -298,6 +308,18 @@ const DashboardHome = () => {
           ))}
         </div>
       </motion.div>
+
+      {error && (
+        <div className="text-center p-6">
+          <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
     </div>
   )
 }

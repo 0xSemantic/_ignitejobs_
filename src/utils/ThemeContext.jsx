@@ -1,4 +1,4 @@
-/** 
+/**
  * @description Theme context for managing dark/light mode with persistent storage
  * Purpose: Provide theme state and toggle function to entire app with localStorage persistence
  * Dependencies: React context, localStorage for persistence
@@ -6,7 +6,6 @@
  * Usage: useTheme() hook in components, toggleTheme() to switch
  * Edge cases: SSR safety, system preference detection, consistent state
  */
-
 import React, { createContext, useContext, useEffect, useState } from 'react'
 
 const ThemeContext = createContext()
@@ -29,7 +28,6 @@ export const ThemeProvider = ({ children }) => {
       try {
         // Check for saved theme preference first
         const savedTheme = localStorage.getItem('ignitejobs-theme')
-        
         if (savedTheme) {
           // Use saved preference
           setIsDark(savedTheme === 'dark')
@@ -46,21 +44,18 @@ export const ThemeProvider = ({ children }) => {
         setIsInitialized(true)
       }
     }
-
     initializeTheme()
   }, [])
 
   useEffect(() => {
     // Only apply theme after initialization to prevent flash
     if (!isInitialized) return
-
     // Apply theme to document
     if (isDark) {
       document.documentElement.classList.add('dark')
     } else {
       document.documentElement.classList.remove('dark')
     }
-
     // Persist to localStorage
     try {
       localStorage.setItem('ignitejobs-theme', isDark ? 'dark' : 'light')

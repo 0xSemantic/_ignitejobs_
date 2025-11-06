@@ -1,24 +1,41 @@
-/** 
- * @description Authentication API service functions
- * Purpose: Handle all authentication-related API calls
- * Dependencies: axios for HTTP requests, authData for mock data
- * Flow: Make API calls, handle responses and errors
- * Usage: Import and call in AuthContext or components
- * Edge cases: Network errors, invalid responses
+/**
+ * @description Service for authentication-related API endpoints
+ * Purpose: Provides functions for user registration, login, logout, and token verification
+ * Dependencies: axios for HTTP requests
+ * Flow: Sends requests to auth endpoints and manages token storage
+ * Usage: Import and call functions in components like AuthForm
+ * Edge cases: Handles 401 Unauthorized and 404 errors
  */
+import axios from 'axios'
 
-import { login as mockLogin, register as mockRegister, logout as mockLogout } from '../data/authData'
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
-// In a real app, these would be actual API calls
-// For now, we're using mock data
 export const login = async (email, password) => {
-  return await mockLogin(email, password)
+  try {
+    const response = await axios.post(`${baseURL}/auth/login`, { email, password })
+    return response.data
+  } catch (error) {
+    throw error.response?.data?.detail || 'Login failed'
+  }
 }
 
 export const register = async (email, password, name) => {
-  return await mockRegister(email, password, name)
+  try {
+    const response = await axios.post(`${baseURL}/auth/register`, { email, password, name })
+    return response.data
+  } catch (error) {
+    throw error.response?.data?.detail || 'Registration failed'
+  }
 }
 
 export const logout = async () => {
-  return await mockLogout()
+  try {
+    const token = localStorage.getItem('ignitejobs-token')
+    const response = await axios.post(`${baseURL}/auth/logout`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    return response.data
+  } catch (error) {
+    throw error.response?.data?.detail || 'Logout failed'
+  }
 }

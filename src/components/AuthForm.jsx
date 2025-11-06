@@ -1,46 +1,47 @@
 /**
  * @description Authentication form component for login and registration
  * Purpose: Handle user authentication with beautiful, responsive form
- * Dependencies: useAuth hook, react-hook-form, Framer Motion
+ * Dependencies: useAuth hook, Framer Motion, react-router-dom
  * Flow: Render form based on type, handle submission, show loading states
  * Usage: <AuthForm type="login" /> or <AuthForm type="register" />
- * Edge cases: Form validation, network errors, loading states
+ * Edge cases: Form validation, network errors, loading states, post-login redirect
  */
-
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../utils/AuthContext'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { Mail, Lock, User, Sparkles, Briefcase } from 'lucide-react'
 import LoadingSpinner from './LoadingSpinner'
 
 const AuthForm = ({ type = 'login' }) => {
   const { signin, signup } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
   const isLogin = type === 'login'
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError('')
-
     const formData = new FormData(e.target)
     const email = formData.get('email')
     const password = formData.get('password')
     const name = formData.get('name')
 
     try {
+      let response
       if (isLogin) {
-        await signin(email, password)
+        response = await signin(email, password)
       } else {
-        await signup(email, password, name)
+        response = await signup(email, password, name)
       }
-      navigate('/dashboard')
+      // Redirect to the original destination or dashboard
+      const redirectTo = location.state?.from?.pathname || '/dashboard'
+      navigate(redirectTo, { replace: true })
     } catch (err) {
-      setError(err.message || 'Authentication failed. Please try again.')
+      setError(err.message || 'Authentication failed. Please check your credentials and try again.')
     } finally {
       setLoading(false)
     }
@@ -81,7 +82,6 @@ const AuthForm = ({ type = 'login' }) => {
             {isLogin ? 'Welcome back!' : 'Start your journey'}
           </motion.p>
         </div>
-
         {/* Form Card */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -112,7 +112,6 @@ const AuthForm = ({ type = 'login' }) => {
                 </div>
               </motion.div>
             )}
-
             <div className="space-y-2">
               <label htmlFor="email" className="block text-sm font-medium text-secondary-700 dark:text-secondary-300">
                 Email Address
@@ -129,7 +128,6 @@ const AuthForm = ({ type = 'login' }) => {
                 />
               </div>
             </div>
-
             <div className="space-y-2">
               <label htmlFor="password" className="block text-sm font-medium text-secondary-700 dark:text-secondary-300">
                 Password
@@ -147,7 +145,6 @@ const AuthForm = ({ type = 'login' }) => {
                 />
               </div>
             </div>
-
             {error && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -157,7 +154,6 @@ const AuthForm = ({ type = 'login' }) => {
                 {error}
               </motion.div>
             )}
-
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -174,7 +170,6 @@ const AuthForm = ({ type = 'login' }) => {
                 </>
               )}
             </motion.button>
-
             <div className="text-center">
               <p className="text-secondary-600 dark:text-secondary-400 text-sm">
                 {isLogin ? "Don't have an account? " : "Already have an account? "}
@@ -188,7 +183,6 @@ const AuthForm = ({ type = 'login' }) => {
             </div>
           </form>
         </motion.div>
-
         {/* Feature Highlights */}
         <motion.div
           initial={{ opacity: 0 }}

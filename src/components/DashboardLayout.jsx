@@ -2,20 +2,19 @@
  * @description Main dashboard layout with navigation and content areas
  * Purpose: Provide the main application shell with navigation and routing
  * Dependencies: react-router-dom, useAuth, various dashboard components
- * Flow: Render sidebar navigation and main content area with routes
+ * Flow: Render sidebar navigation and main content area with routes, check auth
  * Usage: Main container for all dashboard pages
- * Edge cases: Mobile responsiveness, authentication checks
+ * Edge cases: Mobile responsiveness, authentication checks, redirects
  */
-
 import React, { useState } from 'react'
-import { Routes, Route, useLocation, Navigate, Link } from 'react-router-dom'
+import { Routes, Route, useLocation, Navigate, Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../utils/AuthContext'
-import { 
-  Briefcase, 
-  Settings, 
-  Bell, 
-  BarChart3, 
+import {
+  Briefcase,
+  Settings,
+  Bell,
+  BarChart3,
   Search,
   Menu,
   X,
@@ -29,12 +28,28 @@ import ConfigForm from './ConfigForm'
 import CampaignForm from './CampaignForm'
 import ResultsList from './ResultsList'
 import NotificationPanel from './NotificationPanel'
+import LoadingSpinner from './LoadingSpinner'
 
 const DashboardLayout = () => {
-  const { user, signout } = useAuth()
+  const { user, loading, signout } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+
+  // If still loading, show spinner
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-secondary-50 dark:bg-secondary-900 flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    )
+  }
+
+  // If no user, redirect to login with current location state
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -51,20 +66,23 @@ const DashboardLayout = () => {
   }
 
   const handleSignOut = async () => {
-    await signout()
-    // The AuthContext will handle redirecting to login
+    try {
+      await signout()
+      navigate('/login', { replace: true })
+    } catch (error) {
+      console.error('Signout failed:', error)
+    }
   }
 
   return (
     <div className="flex h-screen bg-secondary-50 dark:bg-secondary-900">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
-
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-secondary-800 shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -72,8 +90,8 @@ const DashboardLayout = () => {
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-secondary-200 dark:border-secondary-700">
-            <Link 
-              to="/dashboard" 
+            <Link
+              to="/dashboard"
               className="flex items-center space-x-3"
               onClick={() => setSidebarOpen(false)}
             >
@@ -91,7 +109,6 @@ const DashboardLayout = () => {
               <X className="w-5 h-5 text-secondary-600 dark:text-secondary-400" />
             </button>
           </div>
-
           {/* User info */}
           <div className="p-6 border-b border-secondary-200 dark:border-secondary-700">
             <div className="flex items-center space-x-3">
@@ -100,21 +117,19 @@ const DashboardLayout = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-secondary-900 dark:text-white truncate">
-                  {user?.name || 'Demo User'}
+                  {user.name || 'User'}
                 </p>
                 <p className="text-sm text-secondary-500 dark:text-secondary-400 truncate">
-                  {user?.email || 'demo@ignitejobs.com'}
+                  {user.email}
                 </p>
               </div>
             </div>
           </div>
-
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-2">
             {navigation.map((item) => {
               const Icon = item.icon
               const active = isActiveRoute(item.href)
-              
               return (
                 <motion.div
                   key={item.name}
@@ -137,7 +152,6 @@ const DashboardLayout = () => {
               )
             })}
           </nav>
-
           {/* Footer */}
           <div className="p-4 border-t border-secondary-200 dark:border-secondary-700">
             <button
@@ -150,7 +164,6 @@ const DashboardLayout = () => {
           </div>
         </div>
       </div>
-
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top header */}
@@ -167,10 +180,8 @@ const DashboardLayout = () => {
                 {navigation.find(item => isActiveRoute(item.href))?.name || 'Dashboard'}
               </h1>
             </div>
-
             <div className="flex items-center space-x-3">
               <ThemeToggle />
-              
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -180,14 +191,12 @@ const DashboardLayout = () => {
                 <Bell className="w-5 h-5 text-secondary-600 dark:text-secondary-400" />
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent-500 rounded-full border-2 border-white dark:border-secondary-800"></span>
               </motion.button>
-
               <div className="w-8 h-8 bg-gradient-to-r from-primary-500 to-accent-500 rounded-full flex items-center justify-center">
                 <User className="w-5 h-5 text-white" />
               </div>
             </div>
           </div>
         </header>
-
         {/* Main content area */}
         <main className="flex-1 overflow-auto">
           <AnimatePresence mode="wait">
@@ -210,9 +219,8 @@ const DashboardLayout = () => {
           </AnimatePresence>
         </main>
       </div>
-
       {/* Notifications Panel */}
-      <NotificationPanel 
+      <NotificationPanel
         isOpen={notificationsOpen}
         onClose={() => setNotificationsOpen(false)}
       />

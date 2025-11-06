@@ -6,7 +6,6 @@
  * Usage: Campaign management page for scheduling automated searches
  * Edge cases: Schedule validation, active/inactive toggles, duration limits
  */
-
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Plus, Play, Pause, Calendar, Clock, Target } from 'lucide-react'
@@ -43,7 +42,6 @@ const CampaignForm = () => {
   const handleCreateCampaign = async (e) => {
     e.preventDefault()
     setCreating(true)
-
     try {
       const formData = new FormData(e.target)
       const campaign = {
@@ -53,7 +51,6 @@ const CampaignForm = () => {
         duration_days: parseInt(formData.get('duration_days')),
         active: true
       }
-
       await createUserCampaign(campaign)
       await loadData()
       setShowCreateForm(false)
@@ -107,7 +104,6 @@ const CampaignForm = () => {
           <span>New Campaign</span>
         </motion.button>
       </motion.div>
-
       {/* Create Campaign Form */}
       {showCreateForm && (
         <motion.div
@@ -146,7 +142,7 @@ const CampaignForm = () => {
                   <option value="">Select a configuration</option>
                   {configs.map(config => (
                     <option key={config.id} value={config.id}>
-                      Config #{config.id} - {config.prefs.job_types.join(', ')}
+                      Config #{config.id} - {(config.prefs?.job_types || []).join(', ')}
                     </option>
                   ))}
                 </select>
@@ -163,9 +159,9 @@ const CampaignForm = () => {
                   required
                   className="w-full px-4 py-3 border border-secondary-300 dark:border-secondary-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-secondary-700 text-secondary-900 dark:text-white"
                 >
-                  <option value="every 6h">Every 6 hours</option>
+                  <option value="every 6 hours">Every 6 hours</option>
                   <option value="daily">Daily</option>
-                  <option value="every 2d">Every 2 days</option>
+                  <option value="every 2 days">Every 2 days</option>
                   <option value="weekly">Weekly</option>
                 </select>
               </div>
@@ -212,97 +208,93 @@ const CampaignForm = () => {
           </form>
         </motion.div>
       )}
-
       {/* Campaigns Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {campaigns.map((campaign, index) => {
-          const config = configs.find(c => c.id === campaign.config_id)
-          return (
-            <motion.div
-              key={campaign.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="bg-white dark:bg-secondary-800 rounded-xl shadow-sm border border-secondary-200 dark:border-secondary-700 p-6"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-secondary-900 dark:text-white mb-1">
-                    {campaign.name}
-                  </h3>
-                  <p className="text-sm text-secondary-500 dark:text-secondary-400">
-                    Using Config #{campaign.config_id}
-                  </p>
+        {campaigns.length > 0 ? (
+          campaigns.map((campaign, index) => {
+            const config = configs.find(c => c.id === campaign.config_id)
+            return (
+              <motion.div
+                key={campaign.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-white dark:bg-secondary-800 rounded-xl shadow-sm border border-secondary-200 dark:border-secondary-700 p-6"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-secondary-900 dark:text-white mb-1">
+                      {campaign.name}
+                    </h3>
+                    <p className="text-sm text-secondary-500 dark:text-secondary-400">
+                      Using Config #{campaign.config_id} {(config?.prefs?.job_types || []).join(', ')}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => toggleCampaign(campaign.id, campaign.active)}
+                    className={`p-2 rounded-lg transition-colors duration-200 ${
+                      campaign.active
+                        ? 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400'
+                        : 'bg-secondary-100 text-secondary-600 dark:bg-secondary-700 dark:text-secondary-400'
+                    }`}
+                  >
+                    {campaign.active ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                  </button>
                 </div>
-                <button
-                  onClick={() => toggleCampaign(campaign.id, campaign.active)}
-                  className={`p-2 rounded-lg transition-colors duration-200 ${
-                    campaign.active 
-                      ? 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400' 
-                      : 'bg-secondary-100 text-secondary-600 dark:bg-secondary-700 dark:text-secondary-400'
-                  }`}
-                >
-                  {campaign.active ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                </button>
-              </div>
-
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center text-sm text-secondary-600 dark:text-secondary-400">
-                  <Clock className="w-4 h-4 mr-2" />
-                  <span>{campaign.schedule_str}</span>
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center text-sm text-secondary-600 dark:text-secondary-400">
+                    <Clock className="w-4 h-4 mr-2" />
+                    <span>{campaign.schedule_str}</span>
+                  </div>
+                  <div className="flex items-center text-sm text-secondary-600 dark:text-secondary-400">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    <span>{campaign.duration_days} days</span>
+                  </div>
+                  <div className="flex items-center text-sm text-secondary-600 dark:text-secondary-400">
+                    <Target className="w-4 h-4 mr-2" />
+                    <span>{campaign.results_count || 0} results</span>
+                  </div>
                 </div>
-                <div className="flex items-center text-sm text-secondary-600 dark:text-secondary-400">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  <span>{campaign.duration_days} days</span>
+                <div className="flex items-center justify-between pt-4 border-t border-secondary-200 dark:border-secondary-700">
+                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    campaign.active
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                      : 'bg-secondary-100 text-secondary-800 dark:bg-secondary-700 dark:text-secondary-400'
+                  }`}>
+                    {campaign.active ? 'Active' : 'Paused'}
+                  </div>
+                  <div className="text-xs text-secondary-500 dark:text-secondary-400">
+                    Last run: {campaign.last_run ? new Date(campaign.last_run).toLocaleDateString() : 'Never'}
+                  </div>
                 </div>
-                <div className="flex items-center text-sm text-secondary-600 dark:text-secondary-400">
-                  <Target className="w-4 h-4 mr-2" />
-                  <span>{campaign.results_count} results</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t border-secondary-200 dark:border-secondary-700">
-                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  campaign.active 
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                    : 'bg-secondary-100 text-secondary-800 dark:bg-secondary-700 dark:text-secondary-400'
-                }`}>
-                  {campaign.active ? 'Active' : 'Paused'}
-                </div>
-                <div className="text-xs text-secondary-500 dark:text-secondary-400">
-                  Last run: {new Date(campaign.last_run).toLocaleDateString()}
-                </div>
-              </div>
-            </motion.div>
-          )
-        })}
-      </div>
-
-      {/* Empty State */}
-      {campaigns.length === 0 && !showCreateForm && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="bg-white dark:bg-secondary-800 rounded-xl shadow-sm border border-secondary-200 dark:border-secondary-700 p-12 text-center"
-        >
-          <Target className="w-16 h-16 text-secondary-300 dark:text-secondary-600 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-secondary-900 dark:text-white mb-2">
-            No Campaigns Yet
-          </h3>
-          <p className="text-secondary-600 dark:text-secondary-400 mb-6">
-            Create your first campaign to start automating your job search.
-          </p>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowCreateForm(true)}
-            className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-xl flex items-center space-x-2 mx-auto transition-colors duration-200"
+              </motion.div>
+            )
+          })
+        ) : (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="col-span-full bg-white dark:bg-secondary-800 rounded-xl shadow-sm border border-secondary-200 dark:border-secondary-700 p-12 text-center"
           >
-            <Plus className="w-5 h-5" />
-            <span>Create First Campaign</span>
-          </motion.button>
-        </motion.div>
-      )}
+            <Target className="w-16 h-16 text-secondary-300 dark:text-secondary-600 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-secondary-900 dark:text-white mb-2">
+              No Campaigns Yet
+            </h3>
+            <p className="text-secondary-600 dark:text-secondary-400 mb-6">
+              Create your first campaign to start automating your job search.
+            </p>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowCreateForm(true)}
+              className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-xl flex items-center space-x-2 mx-auto transition-colors duration-200"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Create First Campaign</span>
+            </motion.button>
+          </motion.div>
+        )}
+      </div>
     </div>
   )
 }
